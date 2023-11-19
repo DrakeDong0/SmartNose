@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -140,41 +141,56 @@ int main(void)
   	    Error_Handler();
   	  }
   }
-  printf("Sensors warming up! \n");
+  printf("SSensors warming up! \n");
+  HAL_Delay(3000);
+  const float R1k = 1000.0;
+  const int max_time = 3000000;
+  int time = 0;
+  bool clock = true;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+  while (clock)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
 	  const int R_0 = 945;
-	  ADC_Select_CH0();
+	  ADC_Select_CH0();//MQ4
 	  HAL_ADC_Start(&hadc1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
 	  int x = HAL_ADC_GetValue(&hadc1);
 	  HAL_ADC_Stop(&hadc1);
-	  float volt4 = (x*5)/1023;
-	  float R_S = (5-volt4)*1000/volt4;
-	  float mq4 = pow(R_S/R_0, -2.95) * 1000;
+	  int mq4 = x + 750;
 
 	  ADC_Select_CH1();//MQ136
 	  HAL_ADC_Start(&hadc1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
 	  int y = HAL_ADC_GetValue(&hadc1);
 	  HAL_ADC_Stop(&hadc1);
+	  int mq136 = y-405;
+	  if(mq136<0){
+		  mq136 = mq136*(-1);
+	  }
+
 
 	  ADC_Select_CH4();//MQ135
 	  HAL_ADC_Start(&hadc1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
 	  int z = HAL_ADC_GetValue(&hadc1);
+	  int mq135 = z-250;
 	  HAL_ADC_Stop(&hadc1);
 
 	  HAL_Delay (1000);
-	  printf("MQ4: %d PPM MQ 136: %d PPM MQ135: %d PPM \n", mq4, y, z);
+	  printf("MQ4: %d PPM | MQ136: %d PPM | MQ135: %d PPM \n", mq4, mq136, mq135);
+	  printf("%d \n", time);
+
+	  time+= 1000;
+	  if (time > (max_time-1000)){
+		  clock = false;
+	  }
 
 
   }
