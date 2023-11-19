@@ -34,7 +34,13 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define LED_PORT GPIOA
 
+#define LED_PIN GPIO_PIN_5
+
+#define SW_PORT GPIOC
+
+#define SW_PIN GPIO_PIN_13
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -143,10 +149,10 @@ int main(void)
   }
   printf("SSensors warming up! \n");
   HAL_Delay(3000);
-  const float R1k = 1000.0;
   const int max_time = 3000000;
   int time = 0;
   bool clock = true;
+  int button = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -156,8 +162,27 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	   if (HAL_GPIO_ReadPin(SW_PORT, SW_PIN) != GPIO_PIN_SET)
 
-	  const int R_0 = 945;
+		  {
+		   printf("OFF \n");
+		   if(button == 0){
+
+			button = 1;
+		  }
+		   else{
+			   button = 0;
+			   printf("ON \n");
+		   }
+		  }
+
+	   if(button == 1){
+			  HAL_GPIO_WritePin(LED_PORT, LED_PIN,1);
+	   }
+	   else{
+		  HAL_GPIO_WritePin(LED_PORT, LED_PIN,0);
+
+	   }
 	  ADC_Select_CH0();//MQ4
 	  HAL_ADC_Start(&hadc1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
@@ -185,7 +210,6 @@ int main(void)
 
 	  HAL_Delay (1000);
 	  printf("MQ4: %d PPM | MQ136: %d PPM | MQ135: %d PPM \n", mq4, mq136, mq135);
-	  printf("%d \n", time);
 
 	  time+= 1000;
 	  if (time > (max_time-1000)){
@@ -416,11 +440,33 @@ static void MX_DMA_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PC13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
