@@ -38,13 +38,13 @@
 /* USER CODE BEGIN PD */
 #define LED_PORT GPIOA
 #define LED_PORT2 GPIOB //6
-
-
 #define LED_PIN  GPIO_PIN_5
 #define LED_PIN2 GPIO_PIN_6
 #define LED_PIN3 GPIO_PIN_7
 #define LED_PIN4 GPIO_PIN_6
 #define SW_PORT GPIOC
+
+
 
 #define SW_PIN GPIO_PIN_13
 /* USER CODE END PD */
@@ -113,6 +113,27 @@ int main(void)
   MX_ADC1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  //Initialize variavles
+    const int max_time = 10000;
+    int time = 0;
+    bool clock = true;
+    int button = 0;
+    int mq4size = 0;
+    int mq135size = 0;
+    int mq136size = 0;
+    int mq4data[1000];
+    int mq135data[1000];
+    int mq136data[1000];
+    int mq4mean = 0;
+    int mq135mean = 0;
+    int mq136mean = 0;
+    int mq4dev =  0;
+    int mq135dev = 0;
+    int mq136dev = 0;
+    int mq4median = 0;
+    int mq135median = 0;
+    int mq136median = 0;
+
   void ADC_Select_CH0 (void)
   {
   	ADC_ChannelConfTypeDef sConfig = {0};
@@ -153,59 +174,76 @@ int main(void)
   	    Error_Handler();
   	  }
   }
-  void print(int *array, int size){
-      if(size == 0){
-          return;
-      }
-      printf(array[0]);
-      for(int k = 1;k<size;k++){
-          printf(", %d", array[k]);
-      }
-      printf("\n");
-  }
-  void insert(int *array, int size, int insert){
-	  array[size] = insert;
-	  size++;
-  }
-  void increase(int *array, int cap){
-	  int old_cap = cap;
-	  int* old_array = array;
-	  cap = cap*2;
-	  array = (int *)malloc(cap * sizeof(int));
-	  for(int k = 0; k < old_cap; k++){
-	       array[k] = old_array[k];
-	     }
-	  free(old_array);
-	  old_array = NULL;
-  }
 
+  void insert(int array[],int size){
+        double value = array[size-1];
+        int k = 0;
+        for(k = size-1;(k>0) && (array[k-1] > value); k--){
+            array[k] = array[k-1];
+        }
+        array[k] = value;
+    }
+    void insert_sort(int array[],int size){
+        for(int k = 2; k <= size; k++){
+            insert(array, k);
+        }
+    }
+    int calculate_mean(int size, int array[]){
+      int mean = 0;
+      for(int k = 0; k < size; k++){
+          mean += array[k];
+      }
+      mean = mean/size;
+      return mean;
+    }
+    int calculate_dev(int size, int array[], int mean) {
+        int dev = 0.0;
 
-  const int max_time = 10000000;
-  int time = 0;
-  bool clock = true;
-  int button = 0;
-  int cap1 = 100;
-  int cap2 = 100;
-  int cap3 = 100;
-  int mq4size = 0;
-  int mq135size = 0;
-  int mq136size = 0;
-  int *mq4data =(int *)malloc(cap1 * sizeof(int));
-  int *mq135data =(int *)malloc(cap2 * sizeof(int));
-  int *mq136data =(int *)malloc(cap3 * sizeof(int));
+        for (int k = 0; k < size; k++) {
+            dev += pow(array[k] - mean, 2);
+        }
+
+        dev = sqrt(dev / (size - 1));
+
+        return dev;
+    }
+    void replace_zscores(int size, int array[], int mean, int dev, int median){
+      int zscore = 0;
+      for(int k = 0; k<size; k++){
+          zscore = (array[k]-mean)/dev;
+          if((zscore > 2) || (zscore < -2)){
+              array[k] = median;
+          }
+      }
+    }
+    int calculate_median(int size, int array[]){
+      int median = 0;
+      for(int k = 0; k < size; k++){
+          if((size%2) == 0){
+              median = (array[(size/2)]+array[(size/2)-1])/2;
+          }
+          else{
+              median = array[(size-1)/2];
+          }
+      }
+      return median;
+    }
     Lcd_PortType ports[] = { GPIOC, GPIOB, GPIOA, GPIOA };
     Lcd_PinType pins[] = {GPIO_PIN_7, GPIO_PIN_6, GPIO_PIN_7, GPIO_PIN_6};
     Lcd_HandleTypeDef lcd;
     lcd = Lcd_create(ports, pins, GPIOB, GPIO_PIN_5, GPIOB, GPIO_PIN_4, LCD_4_BIT_MODE);
-    Lcd_cursor(&lcd, 0,1);
-    Lcd_string(&lcd, "Sensors Warming Up!");
-      for ( int x = 3; x > 3 ; x-- )
+      for ( int x = 1; x< 4 ; x++ )
       {
-        Lcd_cursor(&lcd, 1,7);
-        Lcd_int(&lcd, x);
-        HAL_Delay (1000);
-      }
       Lcd_clear(&lcd);
+      Lcd_cursor(&lcd, 1,1);
+      Lcd_int(&lcd, x);
+      printf("%d \n", x);
+        Lcd_cursor(&lcd, 0,1);
+        Lcd_string(&lcd, "Sensors Warming Up!");
+        HAL_Delay (1000);
+        Lcd_clear(&lcd);
+      }
+
 
   /* USER CODE END 2 */
 
@@ -217,78 +255,140 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  Lcd_clear(&lcd);
-	  Lcd_cursor(&lcd, 0,1);
-	  Lcd_int(&lcd, time);
-	  if (HAL_GPIO_ReadPin(SW_PORT, SW_PIN) != GPIO_PIN_SET)
+	      Lcd_cursor(&lcd, 1,1);
+	      Lcd_int(&lcd, (time/1000));
+	      Lcd_cursor(&lcd, 0,1);
+	      Lcd_string(&lcd, "Reading inputs...");
+	      if (HAL_GPIO_ReadPin(SW_PORT, SW_PIN) != GPIO_PIN_SET)
 
-		  {
-		   printf("OFF \n");
-		   if(button == 0){
+	        {
+	         printf("OFF \n");
+	         if(button == 0){
 
-			button = 1;
-		  }
-		   else{
-			   button = 0;
-			   printf("ON \n");
-		   }
-		  }
+	        button = 1;
+	        }
+	         else{
+	           button = 0;
+	           printf("ON \n");
+	         }
+	        }
 
-	   if(button == 1){
-		   HAL_GPIO_WritePin(LED_PORT, LED_PIN,1);
-	   }
-	   else{
-		  HAL_GPIO_WritePin(LED_PORT, LED_PIN,0);
+	       if(button == 1){
+	         HAL_GPIO_WritePin(LED_PORT, LED_PIN,1);	   }
+	       else{
+	        HAL_GPIO_WritePin(LED_PORT, LED_PIN,0);
+	       }
+	      ADC_Select_CH0();//MQ4
+	      HAL_ADC_Start(&hadc1);
+	      HAL_ADC_PollForConversion(&hadc1, 1000);
+	      int x = HAL_ADC_GetValue(&hadc1);
+	      HAL_ADC_Stop(&hadc1);
+	      int mq4 = x + 750;
+	      mq4data[mq4size] = mq4;
+	      mq4size++;
 
-	   }
-	  ADC_Select_CH0();//MQ4
-	  HAL_ADC_Start(&hadc1);
-	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  int x = HAL_ADC_GetValue(&hadc1);
-	  HAL_ADC_Stop(&hadc1);
-	  int mq4 = x + 750;
-	  insert(mq4data, mq4size, mq4);
-	  if(cap1 == mq4size){
-		  increase(mq4data, cap1);
-	  }
-
-	  ADC_Select_CH1();//MQ136
-	  HAL_ADC_Start(&hadc1);
-	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  int y = HAL_ADC_GetValue(&hadc1);
-	  HAL_ADC_Stop(&hadc1);
-	  int mq136 = y-405;
-	  if(mq136<0){
-		  mq136 = mq136*(-1);
-	  }
-	  insert(mq136data, mq136size, mq136);
-	  if(cap2 == mq136size){
-		  increase(mq136data, cap2);
-	  }
-	  ADC_Select_CH4();//MQ135
-	  HAL_ADC_Start(&hadc1);
-	  HAL_ADC_PollForConversion(&hadc1, 1000);
-	  int z = HAL_ADC_GetValue(&hadc1);
-	  int mq135 = z-250;
-	  insert(mq135data, mq135size, mq135);
-	  if(cap3 == mq135size){
-		  increase(mq135data, cap3);
-	  }
-//
-//	  print(mq4data, mq4size);
-//	  print(mq135data, mq135size);
-//	  print(mq136data, mq136size);
-	  HAL_ADC_Stop(&hadc1);
-
-	  HAL_Delay (1000);
-	  printf("MQ4: %d PPM | MQ136: %d PPM | MQ135: %d PPM \n", mq4, mq136, mq135);
-
-	  time+= 1000;
-	  if (time > (max_time-1000)){
-		  clock = false;
-	  }
+	      ADC_Select_CH1();//MQ136
+	      HAL_ADC_Start(&hadc1);
+	      HAL_ADC_PollForConversion(&hadc1, 1000);
+	      int y = HAL_ADC_GetValue(&hadc1);
+	      HAL_ADC_Stop(&hadc1);
+	      int mq136 = y-405;
+	      if(mq136<0){
+	        mq136 = mq136*(-1);
+	      }
+	      mq136data[mq136size] = mq136;
+	      mq136size++;
 
 
-  }
+	      ADC_Select_CH4();//MQ135
+	      HAL_ADC_Start(&hadc1);
+	      HAL_ADC_PollForConversion(&hadc1, 1000);
+	      int z = HAL_ADC_GetValue(&hadc1);
+	      int mq135 = z-250;
+	      mq135data[mq135size] = mq135;
+	      mq135size++;
+
+	      HAL_ADC_Stop(&hadc1);
+
+	      HAL_Delay (1000);
+	      printf("MQ4: %d PPM | MQ136: %d PPM | MQ135: %d PPM \n", mq4, mq136, mq135);
+
+	      time+= 1000;
+	      if (time > (max_time-1000)){
+	        clock = false;
+	      }
+
+
+	    }
+	    Lcd_clear(&lcd);
+	    Lcd_cursor(&lcd, 0,1);
+	    Lcd_string(&lcd, "Calculating... \n");
+	    HAL_Delay(1000);
+
+	  //  //calculate MQ4 Data
+	    insert_sort(mq4data, mq4size);
+	    mq4mean = calculate_mean(mq4size, mq4data);
+	    mq4dev = calculate_dev(mq4size, mq4data, mq4mean);
+	    mq4median = calculate_median(mq4size, mq4data);
+	    replace_zscores(mq4size, mq4data, mq4mean, mq4dev, mq4median);
+	    insert_sort(mq4data, mq4size);
+	    //recalculate values
+	    mq4mean = calculate_mean(mq4size, mq4data);
+	    mq4dev = calculate_dev(mq4size, mq4data, mq4mean);
+	    mq4median = calculate_median(mq4size, mq4data);
+
+	    //Calculate MQ135 Data
+	    insert_sort(mq135data, mq135size);
+	    mq135mean = calculate_mean(mq135size, mq135data);
+	    mq135dev = calculate_dev(mq135size, mq135data, mq135mean);
+	    mq135median = calculate_median(mq135size, mq135data);
+	    replace_zscores(mq135size, mq135data, mq135mean, mq135dev, mq135median); insert_sort(mq135data, mq135size);
+	     //recalculate values
+	    mq135mean = calculate_mean(mq135size, mq135data);
+	    mq135dev = calculate_dev(mq135size, mq135data, mq135mean);
+	    mq135median = calculate_median(mq135size, mq135data);
+
+	    //Calculate MQ136 data
+	    insert_sort(mq136data, mq136size);
+	    mq136mean = calculate_mean(mq136size, mq136data);
+	    mq136dev = calculate_dev(mq136size, mq136data, mq136mean);
+	    mq136median = calculate_median(mq136size, mq136data);
+	    replace_zscores(mq136size, mq136data, mq136mean, mq136dev, mq136median); insert_sort(mq136data, mq136size);
+	    //recalculate values
+	    mq136mean = calculate_mean(mq136size, mq136data);
+	    mq136dev = calculate_dev(mq136size, mq136data, mq136mean);
+	    mq136median = calculate_median(mq136size, mq136data);
+
+	    printf("PRINTING DATA \n");
+	      for(int k = 0; k < mq136size; k++){
+	        printf("MQ136: %d PPM | MQ136: %d PPM | MQ136: %d PPM \n", mq136data[k], mq136data[k], mq136data[k]);
+	        printf("\n");
+	      }
+
+	    printf("MQ4 ->  Mean: %d, Deviation: %d, Median: %d \n", mq4mean, mq4dev, mq4median);
+	    printf("MQ135 -> Mean: %d, Deviation: %d, Median: %d \n", mq135mean, mq135dev, mq135median);
+	    printf("MQ136 -> Mean: %d, Deviation: %d, Median: %d \n", mq136mean, mq136dev, mq136median);
+
+	    int gas = 0;
+	    if (mq4median > 1500){
+	    	gas = 4;
+
+	    }
+	    if (mq4median > 40){
+	    	gas = 136;
+	    }
+	    if (mq135median > 500){
+	    	gas = 135;
+	    }
+	    if (gas == 0){
+	  	 Lcd_clear(&lcd);
+	  	 Lcd_cursor(&lcd, 0,1);
+	  	 Lcd_string(&lcd, "No Spoilage");
+	  	 Lcd_cursor(&lcd, 1,1);
+	  	 Lcd_string(&lcd, "Detected! :)");
+	    }
+
+
   /* USER CODE END 3 */
 }
 
