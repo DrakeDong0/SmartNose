@@ -268,12 +268,7 @@ int main(void)
          }
         }
 
-//       if(button == 1){
-//         HAL_GPIO_WritePin(LED_PORT, LED_PIN,1);
-//       }
-//       else{
-//        HAL_GPIO_WritePin(LED_PORT, LED_PIN,0);
-//       }
+
 
   }
   while (clock && (button == 1))
@@ -320,6 +315,12 @@ int main(void)
 
 	      HAL_Delay (1000);
 	      printf("MQ4: %d PPM | MQ136: %d PPM | MQ135: %d PPM \n", mq4, mq136, mq135);
+	      if((mq4>1510)||(mq136>40)||(mq135>500)){
+	    	  HAL_GPIO_WritePin(LED_PORT, LED_PIN,1);
+	    	  }
+	     else{
+	    	 HAL_GPIO_WritePin(LED_PORT, LED_PIN,0);
+	     }
 
 	      time+= 1000;
 	      if (time > max_time){
@@ -383,7 +384,7 @@ int main(void)
 	    	gas = 4;
 
 	    }
-	    if (mq4median > 40){
+	    if (mq136median > 40){
 	    	gas = 136;
 	    }
 	    if (mq135median > 500){
