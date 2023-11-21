@@ -115,7 +115,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   //Initialize variavles
     const int max_time = 10000;
-    int time = 0;
+    int time = 1000;
     bool clock = true;
     int button = 0;
     int mq4size = 0;
@@ -249,7 +249,34 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (clock)
+  Lcd_clear(&lcd);
+  Lcd_cursor(&lcd, 0,1);
+  Lcd_string(&lcd, "Press to Start");
+  while(button == 0){
+      if (HAL_GPIO_ReadPin(SW_PORT, SW_PIN) != GPIO_PIN_SET)
+
+        {
+         printf("OFF \n");
+         if(button == 0){
+
+        	 button = 1;
+        }
+         else{
+           button = 0;
+           printf("ON \n");
+           break;
+         }
+        }
+
+//       if(button == 1){
+//         HAL_GPIO_WritePin(LED_PORT, LED_PIN,1);
+//       }
+//       else{
+//        HAL_GPIO_WritePin(LED_PORT, LED_PIN,0);
+//       }
+
+  }
+  while (clock && (button == 1))
   {
     /* USER CODE END WHILE */
 
@@ -259,25 +286,6 @@ int main(void)
 	      Lcd_int(&lcd, (time/1000));
 	      Lcd_cursor(&lcd, 0,1);
 	      Lcd_string(&lcd, "Reading inputs...");
-	      if (HAL_GPIO_ReadPin(SW_PORT, SW_PIN) != GPIO_PIN_SET)
-
-	        {
-	         printf("OFF \n");
-	         if(button == 0){
-
-	        button = 1;
-	        }
-	         else{
-	           button = 0;
-	           printf("ON \n");
-	         }
-	        }
-
-	       if(button == 1){
-	         HAL_GPIO_WritePin(LED_PORT, LED_PIN,1);	   }
-	       else{
-	        HAL_GPIO_WritePin(LED_PORT, LED_PIN,0);
-	       }
 	      ADC_Select_CH0();//MQ4
 	      HAL_ADC_Start(&hadc1);
 	      HAL_ADC_PollForConversion(&hadc1, 1000);
@@ -314,12 +322,13 @@ int main(void)
 	      printf("MQ4: %d PPM | MQ136: %d PPM | MQ135: %d PPM \n", mq4, mq136, mq135);
 
 	      time+= 1000;
-	      if (time > (max_time-1000)){
+	      if (time > max_time){
 	        clock = false;
 	      }
 
 
 	    }
+      	HAL_Delay(1000);
 	    Lcd_clear(&lcd);
 	    Lcd_cursor(&lcd, 0,1);
 	    Lcd_string(&lcd, "Calculating... \n");
@@ -379,6 +388,13 @@ int main(void)
 	    }
 	    if (mq135median > 500){
 	    	gas = 135;
+	    	Lcd_clear(&lcd);
+	    	Lcd_cursor(&lcd, 0,0);
+	    	Lcd_string(&lcd, "Poor Air Quality");
+
+	    	  //Lcd_string(&lcd,("Mean:%d, Dev:%d, Med:%", mq135mean, mq135dev, mq135median));
+
+
 	    }
 	    if (gas == 0){
 	  	 Lcd_clear(&lcd);

@@ -1,6 +1,6 @@
 ../Drivers/CMSIS/Include/core_cm4.h:2064:26:ITM_SendChar	4
 ../Core/Src/main.c:137:8:ADC_Select_CH0	2
-../Core/Src/main.c:87:5:main	13
+../Core/Src/main.c:87:5:main	14
 ../Core/Src/main.c:151:8:ADC_Select_CH1	2
 ../Core/Src/main.c:164:8:ADC_Select_CH4	2
 ../Core/Src/main.c:178:8:insert	3
@@ -9,11 +9,11 @@
 ../Core/Src/main.c:199:9:calculate_dev	2
 ../Core/Src/main.c:210:10:replace_zscores	4
 ../Core/Src/main.c:219:9:calculate_median	3
-../Core/Src/main.c:399:6:SystemClock_Config	3
-../Core/Src/main.c:446:13:MX_ADC1_Init	5
-../Core/Src/main.c:518:13:MX_TIM2_Init	4
-../Core/Src/main.c:563:13:MX_USART2_UART_Init	2
-../Core/Src/main.c:594:13:MX_DMA_Init	1
-../Core/Src/main.c:612:13:MX_GPIO_Init	1
-../Core/Src/main.c:668:5:_write	2
-../Core/Src/main.c:685:6:Error_Handler	1
+../Core/Src/main.c:415:6:SystemClock_Config	3
+../Core/Src/main.c:462:13:MX_ADC1_Init	5
+../Core/Src/main.c:534:13:MX_TIM2_Init	4
+../Core/Src/main.c:579:13:MX_USART2_UART_Init	2
+../Core/Src/main.c:610:13:MX_DMA_Init	1
+../Core/Src/main.c:628:13:MX_GPIO_Init	1
+../Core/Src/main.c:684:5:_write	2
+../Core/Src/main.c:701:6:Error_Handler	1
