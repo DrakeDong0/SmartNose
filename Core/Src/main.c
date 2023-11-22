@@ -13,11 +13,19 @@
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
+  *
+  * Code written by Drake D. and Ivan K. for ECE198 our Project.
+  * November 22, 2023
+  *
+  * This project records the gas PPM using MQ4, MQ135, and MQ136 sensors and
+  * calculates the safety using safety regulations. Statistical principals like
+  * measurement error and Z-Score are used to ensure a precise reading.
   ******************************************************************************
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -113,8 +121,8 @@ int main(void)
   MX_ADC1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  //Initialize variavles
-    const int max_time = 10000;
+  //Initialize variables
+    const int max_time = 15000;
     int time = 1000;
     bool clock = true;
     int button = 0;
@@ -133,6 +141,12 @@ int main(void)
     int mq4median = 0;
     int mq135median = 0;
     int mq136median = 0;
+    int mq4moe = 0;
+    int mq135moe = 0;
+    int mq136moe = 0;
+    int mq4sum = 0;
+    int mq135sum = 0;
+    int mq136sum = 0;
 
   void ADC_Select_CH0 (void)
   {
@@ -228,16 +242,27 @@ int main(void)
       }
       return median;
     }
+    int sum(int array[], int size){
+    	int sum = 0;
+    	for(int k = 0; k<size; k++){
+    	sum += array[k];
+    	}
+    }
+    int calculate_moe(int sum, int mean, int size, int dev){
+    	int tot = (sum-(mean*size))/dev;
+    	int moe = tot*(dev/(sqrt(size)));
+    	return moe;
+
+    }
     Lcd_PortType ports[] = { GPIOC, GPIOB, GPIOA, GPIOA };
     Lcd_PinType pins[] = {GPIO_PIN_7, GPIO_PIN_6, GPIO_PIN_7, GPIO_PIN_6};
     Lcd_HandleTypeDef lcd;
     lcd = Lcd_create(ports, pins, GPIOB, GPIO_PIN_5, GPIOB, GPIO_PIN_4, LCD_4_BIT_MODE);
-      for ( int x = 1; x< 4 ; x++ )
+      for ( int x = 10; x > 0 ; x-- )
       {
       Lcd_clear(&lcd);
-      Lcd_cursor(&lcd, 1,1);
+      Lcd_cursor(&lcd, 1,8);
       Lcd_int(&lcd, x);
-      printf("%d \n", x);
         Lcd_cursor(&lcd, 0,1);
         Lcd_string(&lcd, "Sensors Warming Up!");
         HAL_Delay (1000);
@@ -256,14 +281,12 @@ int main(void)
       if (HAL_GPIO_ReadPin(SW_PORT, SW_PIN) != GPIO_PIN_SET)
 
         {
-         printf("OFF \n");
          if(button == 0){
 
         	 button = 1;
         }
          else{
            button = 0;
-           printf("ON \n");
            break;
          }
         }
@@ -277,7 +300,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  Lcd_clear(&lcd);
-	      Lcd_cursor(&lcd, 1,1);
+	      Lcd_cursor(&lcd, 1,7);
 	      Lcd_int(&lcd, (time/1000));
 	      Lcd_cursor(&lcd, 0,1);
 	      Lcd_string(&lcd, "Reading inputs...");
@@ -286,7 +309,7 @@ int main(void)
 	      HAL_ADC_PollForConversion(&hadc1, 1000);
 	      int x = HAL_ADC_GetValue(&hadc1);
 	      HAL_ADC_Stop(&hadc1);
-	      int mq4 = x + 750;
+	      int mq4 = x + 300;
 	      mq4data[mq4size] = mq4;
 	      mq4size++;
 
@@ -346,6 +369,8 @@ int main(void)
 	    mq4mean = calculate_mean(mq4size, mq4data);
 	    mq4dev = calculate_dev(mq4size, mq4data, mq4mean);
 	    mq4median = calculate_median(mq4size, mq4data);
+	    mq4sum = sum(mq4data, mq4size);
+	    mq4moe = calculate_moe(mq4sum, mq4mean, mq4size, mq4dev);
 
 	    //Calculate MQ135 Data
 	    insert_sort(mq135data, mq135size);
@@ -357,6 +382,8 @@ int main(void)
 	    mq135mean = calculate_mean(mq135size, mq135data);
 	    mq135dev = calculate_dev(mq135size, mq135data, mq135mean);
 	    mq135median = calculate_median(mq135size, mq135data);
+	    mq135sum = sum(mq135data, mq135size);
+	    mq135moe = calculate_moe(mq135sum, mq135mean, mq135size, mq135dev);
 
 	    //Calculate MQ136 data
 	    insert_sort(mq136data, mq136size);
@@ -368,41 +395,116 @@ int main(void)
 	    mq136mean = calculate_mean(mq136size, mq136data);
 	    mq136dev = calculate_dev(mq136size, mq136data, mq136mean);
 	    mq136median = calculate_median(mq136size, mq136data);
+	    mq136sum = sum(mq136data, mq136size);
+	    mq136moe = calculate_moe(mq136sum, mq136mean, mq136size, mq136dev);
 
-	    printf("PRINTING DATA \n");
+	    if ((mq136moe >= 10) || (mq135moe >= 10)|| (mq4moe >= 10)){ //check if measurement error is greater than 10%
+	    	Lcd_clear(&lcd);
+	    	Lcd_cursor(&lcd, 0,0);
+	    	Lcd_string(&lcd, "Error too high");
+	    	Lcd_cursor(&lcd, 1,0);
+	    	Lcd_string(&lcd, "Try Again");
+	    	exit(0);
+	    }
+
+
+	    printf("PRINTING DATA \n");//error checking by printing to console
 	      for(int k = 0; k < mq136size; k++){
-	        printf("MQ136: %d PPM | MQ136: %d PPM | MQ136: %d PPM \n", mq136data[k], mq136data[k], mq136data[k]);
+	        printf("MQ4: %d PPM | MQ136: %d PPM | MQ135: %d PPM \n", mq4data[k], mq136data[k], mq135data[k]);
 	        printf("\n");
 	      }
 
 	    printf("MQ4 ->  Mean: %d, Deviation: %d, Median: %d \n", mq4mean, mq4dev, mq4median);
 	    printf("MQ135 -> Mean: %d, Deviation: %d, Median: %d \n", mq135mean, mq135dev, mq135median);
 	    printf("MQ136 -> Mean: %d, Deviation: %d, Median: %d \n", mq136mean, mq136dev, mq136median);
-
 	    int gas = 0;
-	    if (mq4median > 1500){
-	    	gas = 4;
+	    while (button == 1){
+	    	if (HAL_GPIO_ReadPin(SW_PORT, SW_PIN) != GPIO_PIN_SET)
 
-	    }
-	    if (mq136median > 40){
-	    	gas = 136;
-	    }
-	    if (mq135median > 500){
-	    	gas = 135;
-	    	Lcd_clear(&lcd);
-	    	Lcd_cursor(&lcd, 0,0);
-	    	Lcd_string(&lcd, "Poor Air Quality");
+	    	        {
+	    	         if(button == 0){
 
-	    	  //Lcd_string(&lcd,("Mean:%d, Dev:%d, Med:%", mq135mean, mq135dev, mq135median));
+	    	        	 button = 1;
+	    	        }
+	    	         else{
+	    	           button = 0;
+	    	           break;
+	    	         }
+	    	}
+			if (mq4median > 1500){
+				gas = 4;
+				Lcd_clear(&lcd);
+				Lcd_cursor(&lcd, 0,0);
+				Lcd_string(&lcd, "High Methane!");
+				Lcd_cursor(&lcd, 1,0);
+				Lcd_string(&lcd, "Mean PPM:");
+				Lcd_cursor(&lcd, 1, 9);
+				Lcd_int(&lcd, mq4mean);
+				HAL_Delay(1500);
+				Lcd_clear(&lcd);
+				Lcd_cursor(&lcd, 0,0);
+				Lcd_string(&lcd, "Deviation:");
+				Lcd_cursor(&lcd, 0, 10);
+				Lcd_int(&lcd, mq4dev);
+				Lcd_cursor(&lcd, 1,0);
+				Lcd_string(&lcd, "Median PPM:");
+				Lcd_cursor(&lcd, 1,11);
+				Lcd_int(&lcd, mq4median);
+				HAL_Delay(1500);
 
+			}
+			if (mq136median > 50){
+				gas = 136;
+				Lcd_clear(&lcd);
+				Lcd_cursor(&lcd, 0,0);
+				Lcd_string(&lcd, "High H2S!");
+				Lcd_cursor(&lcd, 1,0);
+				Lcd_string(&lcd, "Mean PPM:");
+				Lcd_cursor(&lcd, 1, 9);
+				Lcd_int(&lcd, mq135mean);
+				HAL_Delay(1500);
+				Lcd_clear(&lcd);
+				Lcd_cursor(&lcd, 0,0);
+				Lcd_string(&lcd, "Deviation:");
+				Lcd_cursor(&lcd, 0, 10);
+				Lcd_int(&lcd, mq135dev);
+				Lcd_cursor(&lcd, 1,0);
+				Lcd_string(&lcd, "Median PPM:");
+				Lcd_cursor(&lcd, 1,11);
+				Lcd_int(&lcd, mq135median);
+				HAL_Delay(1500);
+			}
+			if (mq135median > 500){
+				gas = 135;
+				Lcd_clear(&lcd);
+				Lcd_cursor(&lcd, 0,0);
+				Lcd_string(&lcd, "Poor Air Quality!");
+				Lcd_cursor(&lcd, 1,0);
+				Lcd_string(&lcd, "Mean PPM:");
+				Lcd_cursor(&lcd, 1, 9);
+				Lcd_int(&lcd, mq135mean);
+				HAL_Delay(1500);
+				Lcd_clear(&lcd);
+				Lcd_cursor(&lcd, 0,0);
+				Lcd_string(&lcd, "Deviation:");
+				Lcd_cursor(&lcd, 0, 10);
+				Lcd_int(&lcd, mq135dev);
+				Lcd_cursor(&lcd, 1,0);
+				Lcd_string(&lcd, "Median PPM:");
+				Lcd_cursor(&lcd, 1,11);
+				Lcd_int(&lcd, mq135median);
+				HAL_Delay(1500);
 
-	    }
-	    if (gas == 0){
-	  	 Lcd_clear(&lcd);
-	  	 Lcd_cursor(&lcd, 0,1);
-	  	 Lcd_string(&lcd, "No Spoilage");
-	  	 Lcd_cursor(&lcd, 1,1);
-	  	 Lcd_string(&lcd, "Detected! :)");
+			}
+			if (gas == 0){
+			 Lcd_clear(&lcd);
+			 Lcd_cursor(&lcd, 0,1);
+			 Lcd_string(&lcd, "No Spoilage");
+			 Lcd_cursor(&lcd, 1,1);
+			 Lcd_string(&lcd, "Detected! :)");
+			}
+
+	    	HAL_Delay(1000);
 	    }
 
 
