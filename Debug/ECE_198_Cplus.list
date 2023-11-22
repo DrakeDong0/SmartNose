@@ -1788,8 +1788,8 @@ int main(void)
  8001218:	f001 fb56 	bl	80028c8 <MX_ADC1_Init>
   MX_USART2_UART_Init();
  800121c:	f001 fc12 	bl	8002a44 <MX_USART2_UART_Init>
-    const int max_time = 20000;
- 8001220:	f644 6320 	movw	r3, #20000	; 0x4e20
+    const int max_time = 15000;
+ 8001220:	f643 2398 	movw	r3, #15000	; 0x3a98
  8001224:	f507 523d 	add.w	r2, r7, #12096	; 0x2f40
  8001228:	f102 023c 	add.w	r2, r2, #60	; 0x3c
  800122c:	6013      	str	r3, [r2, #0]
@@ -1943,8 +1943,8 @@ int main(void)
  800138a:	c40f      	stmia	r4!, {r0, r1, r2, r3}
  800138c:	e895 0003 	ldmia.w	r5, {r0, r1}
  8001390:	e884 0003 	stmia.w	r4, {r0, r1}
-      for ( int x = 20; x > 0 ; x-- )
- 8001394:	2314      	movs	r3, #20
+      for ( int x = 10; x > 0 ; x-- )
+ 8001394:	230a      	movs	r3, #10
  8001396:	f507 523e 	add.w	r2, r7, #12160	; 0x2f80
  800139a:	f102 020c 	add.w	r2, r2, #12
  800139e:	6013      	str	r3, [r2, #0]
@@ -1991,7 +1991,7 @@ int main(void)
  80013fe:	3b10      	subs	r3, #16
  8001400:	4618      	mov	r0, r3
  8001402:	f7ff fdfd 	bl	8001000 <Lcd_clear>
-      for ( int x = 20; x > 0 ; x-- )
+      for ( int x = 10; x > 0 ; x-- )
  8001406:	f507 533e 	add.w	r3, r7, #12160	; 0x2f80
  800140a:	f103 030c 	add.w	r3, r3, #12
  800140e:	681b      	ldr	r3, [r3, #0]
@@ -2196,11 +2196,11 @@ int main(void)
 	      HAL_ADC_Stop(&hadc1);
  80015d0:	485b      	ldr	r0, [pc, #364]	; (8001740 <main+0x558>)
  80015d2:	f001 fee1 	bl	8003398 <HAL_ADC_Stop>
-	      int mq136 = y-405;
+	      int mq136 = y-450;
  80015d6:	f507 533c 	add.w	r3, r7, #12032	; 0x2f00
  80015da:	f103 0334 	add.w	r3, r3, #52	; 0x34
  80015de:	681b      	ldr	r3, [r3, #0]
- 80015e0:	f2a3 1395 	subw	r3, r3, #405	; 0x195
+ 80015e0:	f5a3 73e1 	sub.w	r3, r3, #450	; 0x1c2
  80015e4:	f507 523e 	add.w	r2, r7, #12160	; 0x2f80
  80015e8:	f102 0208 	add.w	r2, r2, #8
  80015ec:	6013      	str	r3, [r2, #0]

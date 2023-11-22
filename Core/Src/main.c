@@ -318,7 +318,7 @@ int main(void)
 	      HAL_ADC_PollForConversion(&hadc1, 1000);
 	      int y = HAL_ADC_GetValue(&hadc1);
 	      HAL_ADC_Stop(&hadc1);
-	      int mq136 = y-405;
+	      int mq136 = y-450;
 	      if(mq136<0){
 	        mq136 = mq136*(-1);
 	      }
