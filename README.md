@@ -7,8 +7,22 @@ Upon start, the sensors are warmed up, then used to collect air quality data ove
 The mean, median, and standard deviation are then displayed onto the LCD Display. The Z-score is calculated to replace outlier data with the median, and the measurement of error is used to determine if the data sample is precise enough.
 ## Pictures
 
-### Start
+### Schematic
+
+![Start](pictures/image.png)
+
+### Start 
 
 ![Start](pictures/IMG_4891.png)
+
+### Data Display Page 1
+
+![Start](pictures/IMG_4892.png)
+
+### Data Display Page 2
+
+![Start](pictures/IMG_4893.png)
+
+
 
 
