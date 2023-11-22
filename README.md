@@ -9,6 +9,6 @@ The mean, median, and standard deviation are then displayed onto the LCD Display
 
 ### Start
 
-![Start](Screenshots/IMG_4891.png)
+![Start](pictures/IMG_4891.png)
 
 
